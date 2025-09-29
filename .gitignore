@@ -1,0 +1,16 @@
+build/*
+!build/.keep
+
+.idea
+.vscode
+
+external/*
+!external/.keep
+
+examples/*
+!examples/.keep
+
+lib/*
+!lib/.keep
+
+compile_commands.json
