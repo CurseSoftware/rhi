@@ -10,6 +10,7 @@
 
 #include "core/expected.h"
 #include "common/error.h"
+#include "vk/vulkan.h"
 #include "common/window_data.h"
 
 namespace rhi::vk
@@ -55,12 +56,19 @@ namespace rhi::vk
                 return *this;
             }
 
+            [[nodiscard]] builder& headless(const bool headless = true) noexcept
+            {
+                _info.headless = headless;
+                return *this;
+            }
+
         private:
             struct
             {
                 bool enable_debug { false };
                 std::vector<std::string> extensions {};
                 std::optional<window_data> window {};
+                bool headless { false };
             } _info {};
         };
 
@@ -72,6 +80,11 @@ namespace rhi::vk
 
     private:
         [[nodiscard]] explicit instance() = default;
+
+        struct
+        {
+            VkInstance instance { VK_NULL_HANDLE };
+        } _detail {};
     };
 } // namespace rhi::vk
 

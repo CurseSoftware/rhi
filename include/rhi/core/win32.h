@@ -9,7 +9,9 @@
 
 #ifdef RHI_PLATFORM_WINDOWS
 
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif // NOMINMAX
 #include <windows.h>
 
 #endif // RHI_PLATFORM_WINDOWS

@@ -5,7 +5,10 @@
 #ifndef RHI_EXTENSION_HANDLER_H
 #define RHI_EXTENSION_HANDLER_H
 
+#include <span>
+
 #include "vk/vulkan.h"
+#include "core/expected.h"
 
 #include <string>
 #include <string_view>
@@ -34,6 +37,8 @@ namespace rhi::vk
 
         template<extension_source S>
         void fetch_all_extensions() noexcept;
+
+        expected<std::vector<const char*>, const char*> get_requested(std::span<requested_extension>) const noexcept;
 
         [[nodiscard]] bool is_supported(std::string_view) const noexcept;
 

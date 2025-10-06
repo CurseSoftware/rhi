@@ -128,8 +128,20 @@ namespace rhi
     public:
         [[nodiscard]] constexpr bool has_value() const noexcept { return _is_ok; }
 
-        [[nodiscard]] constexpr T&& unwrap() const noexcept
+        [[nodiscard]] constexpr T&& unwrap() const && noexcept
         {
+            static_assert(std::is_move_assignable_v<T>, "T must be movable");
+            if (_is_ok)
+            {
+                return std::get<T>(std::move(_value));
+            }
+
+            std::terminate();
+        }
+
+        [[nodiscard]] constexpr const T& unwrap() const & noexcept
+        {
+            static_assert(std::is_copy_assignable_v<T>, "T must be copyable");
             if (_is_ok)
             {
                 return std::get<T>(std::move(_value));
@@ -146,6 +158,16 @@ namespace rhi
             }
 
             return other;
+        }
+
+        [[nodiscard]] constexpr E unwrap_error() const noexcept
+        {
+            if (!_is_ok)
+            {
+                std::terminate();
+            }
+
+            return std::get<E>(_value);
         }
 
         // TODO: support move-only types
