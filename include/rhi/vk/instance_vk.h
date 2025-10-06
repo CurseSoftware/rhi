@@ -15,6 +15,15 @@
 
 namespace rhi::vk
 {
+    enum class surface_create_error
+    {
+        INVALID_WINDOW_DATA_NOT_WIN32,
+        INVALID_WINDOW_DATA_NOT_XLIB,
+        INVALID_WINDOW_DATA_NOT_METAL,
+        INVALID_WINDOW_DATA_NOT_WAYLAND,
+        CREATE_SURFACE_FAILED
+    };
+
     class instance
     {
     public:
@@ -78,12 +87,16 @@ namespace rhi::vk
         instance(instance&&) = delete;
         instance& operator=(instance&) = delete;
 
+        expected<VkSurfaceKHR, surface_create_error> create_surface(const window_data&) noexcept;
+
+
     private:
         [[nodiscard]] explicit instance() = default;
 
         struct
         {
             VkInstance instance { VK_NULL_HANDLE };
+            VkSurfaceKHR surface { VK_NULL_HANDLE };
         } _detail {};
     };
 } // namespace rhi::vk

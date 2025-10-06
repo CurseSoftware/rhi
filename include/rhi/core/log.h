@@ -16,12 +16,16 @@ namespace rhi::log
         void init() const noexcept;
         [[nodiscard]] log_initializer& set_out(std::ostream& out) noexcept;
         [[nodiscard]] log_initializer& set_err(std::ostream& err) noexcept;
+        [[nodiscard]] log_initializer& print_logs(bool should_print) noexcept;
+        [[nodiscard]] log_initializer& print_debug(bool should_print_debug) noexcept;
 
     private:
         struct
         {
             std::ostream* out { &std::cout };
             std::ostream* err { &std::cerr };
+            bool should_print { true };
+            bool debug_print { false };
         } _detail;
     };
 

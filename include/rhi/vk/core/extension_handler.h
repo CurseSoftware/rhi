@@ -17,7 +17,7 @@
 namespace rhi::vk
 {
     struct instance;
-    struct physical_device;
+    class physical_device;
 
     template <typename T>
     concept extension_source =

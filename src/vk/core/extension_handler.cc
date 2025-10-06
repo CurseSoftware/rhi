@@ -1,5 +1,5 @@
 #include "vk/core/extension_handler.h"
-#include "vk/core/extension_handler.h"
+#include "core/log.h"
 #include "vk/vulkan.h"
 #include <cstdint>
 #include <iostream>
@@ -33,17 +33,21 @@ namespace rhi::vk
             {
                 if (extension.is_required)
                 {
-                    std::cout << "Extension " << extension.name << " is missing." << std::endl;
+                    log::error("Vulkan extension {} is missing.", extension.name);
                     return unexpected(extension.name.c_str());
+                }
+                else
+                {
+                    log::warn("Non-required Vulkan extension {} is missing.", extension.name);
                 }
             }
             else
             {
-                std::cout << "Found extension " << extension.name << std::endl;
+                log::debug("Vulkan extension {} found.", extension.name);
                 found_extensions.push_back(extension.name.c_str());
             }
         }
-        std::cout << "Found all extensions\n";
+        log::debug("All requested vulkan extensions found.");
 
         return ok(found_extensions);
     }
