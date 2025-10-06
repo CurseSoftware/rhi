@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vulkan/vulkan_core.h>
 
+#include "../../include/rhi/core/format.h"
 #include "vk/core/extension_handler.h"
 #include "vk/core/utils.h"
 #include "vk/core/validation_handler.h"
@@ -82,6 +83,9 @@ namespace rhi::vk
             nullptr,
             &inst._detail.instance
         );
+
+        auto format_test = format_str("Test value: {}", 1);
+        std::cout << "Format test: " << format_test << std::endl;
 
         if (!vk_check(create_result))
         {

@@ -1,4 +1,5 @@
 #include "vk/core/extension_handler.h"
+#include "vk/core/extension_handler.h"
 #include "vk/vulkan.h"
 #include <cstdint>
 #include <iostream>
@@ -51,9 +52,9 @@ namespace rhi::vk
 
     bool extension_handler::is_supported(std::string_view extension_name) const noexcept
     {
-        for (const auto& extension : _extensions)
+        for (const auto& [extensionName, specVersion] : _extensions)
         {
-            if (strcmp(extension.extensionName, extension_name.data()) == 0)
+            if (strcmp(extensionName, extension_name.data()) == 0)
             {
                 return true;
             }

@@ -12,6 +12,7 @@ option(BACKEND_USE_DX12 "Use D3D12 backend" OFF)
 file(GLOB ASSEMBLY_SOURCES
     "${PROJECT_SOURCE_DIR}/src/*.cc"
     "${PROJECT_SOURCE_DIR}/src/common/*.cc"
+    "${PROJECT_SOURCE_DIR}/src/core/*.cc"
     "${PROJECT_SOURCE_DIR}/src/vk/*.cc"
     "${PROJECT_SOURCE_DIR}/src/vk/core/*.cc"
 )
@@ -33,6 +34,8 @@ add_library(${PROJECT_NAME}
     "${ASSEMBLY_HEADERS}"
         include/rhi/vk/core/utils.h
         src/vk/core/utils.cc
+        include/rhi/core/format.h
+        include/rhi/core/log.h
 )
 
 if (BACKEND_USE_VULKAN)
