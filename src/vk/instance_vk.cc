@@ -1,10 +1,12 @@
 #include "vk/instance_vk.h"
 
 #include <iostream>
-#include <vulkan/vulkan_core.h>
+#include <memory>
 
+#include "core/debug_messenger.h"
 #include "core/log.h"
 #include "vk/core/extension_handler.h"
+#include "vk/core/physical_device_handler.h"
 #include "vk/core/utils.h"
 #include "vk/core/validation_handler.h"
 
@@ -24,19 +26,24 @@ namespace rhi::vk
 
         const bool use_debug
             = _info.enable_debug
-            && validation_handler.is_supported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            && instance_extension_handler.is_supported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
         if (use_debug)
         {
-            requested_extensions.emplace_back(true, VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+            log::debug("Use debug option is enabled.");
+            requested_extensions.emplace_back(true, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
             requested_layers.emplace_back(false, "VK_LAYER_KHRONOS_validation");
-            log::debug("Requesting vulkan validation layer");
         }
 
         for (const auto& ext : _info.extensions)
         {
             requested_extensions.emplace_back(true, ext);
             log::debug("Requested extension: {}", ext);
+        }
+
+        if (_info.enable_debug)
+        {
+            requested_layers.emplace_back(false, "VK_LAYER_KHRONOS_validation");
         }
 
         if (!_info.headless)
@@ -48,6 +55,11 @@ namespace rhi::vk
             requested_extensions.emplace_back(true, VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
 #endif
         }
+        // NOTE: not all drivers support this extension. NVIDIA & AMD do not.
+        // else
+        // {
+        //     requested_extensions.emplace_back(true, VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+        // }
 
         const auto validation_layers_exp = validation_handler.get_requested(requested_layers);
         const auto extensions_exp = instance_extension_handler.get_requested(requested_extensions);
@@ -63,7 +75,7 @@ namespace rhi::vk
         {
             const auto error_string = extensions_exp.unwrap_error();
             log::error("Instance creation failed with message: [{}]", error_string);
-            return unexpected(error(error::code::INSTANCE_FAIL, error_string));
+            return unexpected(error(error::code::INSTANCE_FAIL, error_string.c_str()));
         }
 
         auto found_validation_layers = validation_layers_exp.unwrap();
@@ -79,7 +91,7 @@ namespace rhi::vk
             .apiVersion = VK_API_VERSION_1_0
         };
 
-        const VkInstanceCreateInfo instance_info {
+        VkInstanceCreateInfo instance_info {
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
             .pNext = nullptr,
             .pApplicationInfo = &app_info,
@@ -89,6 +101,13 @@ namespace rhi::vk
             .ppEnabledExtensionNames = found_extensions.data()
         };
 
+        std::unique_ptr<VkDebugUtilsMessengerCreateInfoEXT> debug_create_info;
+        if (_info.enable_debug)
+        {
+            debug_create_info = std::make_unique<VkDebugUtilsMessengerCreateInfoEXT>(debug_messenger::get_create_info());
+            instance_info.pNext = debug_create_info.get();
+        }
+
         const VkResult create_result = vkCreateInstance(
             &instance_info,
             nullptr,
@@ -97,7 +116,14 @@ namespace rhi::vk
 
         if (_info.window.has_value())
         {
-            inst.create_surface(_info.window.value());
+            auto surface_exp = inst.create_surface(_info.window.value());
+            if (!surface_exp.has_value())
+            {
+                return unexpected(error(error::code::INSTANCE_FAIL, "Failed to create instance -> [instance::create_surface]"));
+            }
+
+            inst._detail.surface = surface_exp.unwrap();
+            log::debug("Surface created.");
         }
 
         if (!vk_check(create_result))
@@ -106,13 +132,42 @@ namespace rhi::vk
         }
         log::debug("Instance creation completed successfully.");
 
+
+        if (_info.enable_debug)
+        {
+            log::debug("Creating debug messenger...");
+            auto messenger_exp = debug_messenger::create(inst._detail.instance, *debug_create_info.get());
+            if (!messenger_exp.has_value())
+            {
+                log::error("Failed to create debug messenger: [{}]", messenger_exp.unwrap_error());
+                return unexpected(error(error::code::INSTANCE_FAIL, "Failed to create debug messenger"));
+            }
+            auto messenger = messenger_exp.unwrap();
+            inst._debug_messenger = std::make_unique<debug_messenger>(messenger);
+            log::debug("Debug messenger created.");
+        }
+
         // Handle the physical devices
+        log::debug("Retrieving suitable physical devices...");
+        physical_device_handler pd_handler { inst._detail.instance, inst._detail.surface };
+        if (!_info.headless)
+        {
+            pd_handler.request_extension(VK_KHR_SURFACE_EXTENSION_NAME, true);
+        }
+        inst._suitable_devices = pd_handler.get_suitable_devices();
 
+        if (inst._suitable_devices.empty())
+        {
+            return unexpected(error(error::code::INSTANCE_FAIL, "No suitable physical devices found"));
+        }
 
+        // return ok<instance>(std::move(inst));
         return ok(inst);
     }
 
-    expected<VkSurfaceKHR, surface_create_error> instance::create_surface(const window_data& window) noexcept
+
+
+    expected<VkSurfaceKHR, surface_create_error> instance::create_surface(const window_data& window) const noexcept
     {
         VkSurfaceKHR surface { VK_NULL_HANDLE };
 
@@ -142,8 +197,26 @@ namespace rhi::vk
             return unexpected(surface_create_error::CREATE_SURFACE_FAILED);
         }
 #endif // PLATFORM DETECTION
+        // TODO: perform surface creation for other windowing platforms
 
         return ok(surface);
     }
+
+    void instance::destroy() noexcept
+    {
+        log::debug("Destroying instance...");
+        _debug_messenger->destroy();
+        _debug_messenger.reset();
+
+        _suitable_devices.clear();
+        if (_detail.surface != VK_NULL_HANDLE)
+        {
+            vkDestroySurfaceKHR(_detail.instance, _detail.surface, nullptr);
+        }
+
+        vkDestroyInstance(_detail.instance, nullptr);
+        log::debug("Instance destroyed");
+    }
+
 
 } // namespace rhi::vk

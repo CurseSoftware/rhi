@@ -1,6 +1,9 @@
 #include "vk/core/queue_family_indices.h"
 
+#include <vector>
 #include <ranges>
+
+#include "core/format.h"
 
 namespace rhi::vk
 {
@@ -29,8 +32,8 @@ namespace rhi::vk
                 }
             }
 
-            // Present
-            {
+            // Present [VK_NULL_HANDLE for surface is assumed to be headless
+            if (surface != VK_NULL_HANDLE) {
                 VkBool32 present_support = VK_FALSE;
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, idx, surface, &present_support);
                 if (present_support)
@@ -42,4 +45,18 @@ namespace rhi::vk
             idx++;
         }
     }
+
+    std::string queue_family_indices::get_formatted() const noexcept
+    {
+        const std::string graphics_string = _graphics_family_index.has_value()
+        ? format_str("{}", _graphics_family_index.value())
+            : "None";
+
+        const std::string present_string = _present_family_index.has_value()
+        ? format_str("{}", _present_family_index.value())
+            : "None";
+
+        return format_str("Graphics Index: {}. Present Index: {}", graphics_string, present_string);
+    }
+
 }

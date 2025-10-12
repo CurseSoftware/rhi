@@ -33,12 +33,6 @@ set(ASSEMBLY_INCLUDE_DIR
 add_library(${PROJECT_NAME}
     "${ASSEMBLY_SOURCES}"
     "${ASSEMBLY_HEADERS}"
-        include/rhi/vk/core/utils.h
-        src/vk/core/utils.cc
-        include/rhi/core/format.h
-        include/rhi/core/log.h
-        include/rhi/vk/core/physical_device_handler.h
-        src/vk/core/queue_family_indices.h
 )
 
 if (BACKEND_USE_VULKAN)

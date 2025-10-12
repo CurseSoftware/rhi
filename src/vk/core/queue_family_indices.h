@@ -6,8 +6,9 @@
 #define RHI_QUEUE_FAMILY_INDICES_H
 #include <cstdint>
 #include <optional>
+#include <string>
 
-#include "vk/core/physical_device_handler.h"
+#include "vk/vulkan.h"
 
 namespace rhi::vk
 {
@@ -21,8 +22,13 @@ namespace rhi::vk
             return _graphics_family_index.has_value() && _present_family_index.has_value();
         }
 
+        [[nodiscard]] bool has_graphics() const noexcept { return _graphics_family_index.has_value(); }
+        [[nodiscard]] bool has_present() const noexcept { return _present_family_index.has_value(); }
+
         [[nodiscard]] uint32_t get_graphics() const noexcept { return _graphics_family_index.value(); }
         [[nodiscard]] uint32_t get_present() const noexcept { return _present_family_index.value(); }
+
+        [[nodiscard]] std::string get_formatted() const noexcept;
 
     private:
         std::optional<uint32_t> _graphics_family_index { std::nullopt };

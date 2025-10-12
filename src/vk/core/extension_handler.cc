@@ -23,7 +23,7 @@ namespace rhi::vk
     {
     }
 
-    expected<std::vector<const char*>, const char*> extension_handler::get_requested(const std::span<requested_extension> requested_extensions) const noexcept
+    expected<std::vector<const char*>, std::string> extension_handler::get_requested(const std::span<requested_extension> requested_extensions) const noexcept
     {
         std::vector<const char*> found_extensions {};
 
@@ -33,13 +33,11 @@ namespace rhi::vk
             {
                 if (extension.is_required)
                 {
-                    log::error("Vulkan extension {} is missing.", extension.name);
-                    return unexpected(extension.name.c_str());
+                    log::error("Required Vulkan extension {} is missing.", extension.name);
+                    return unexpected(extension.name);
                 }
-                else
-                {
-                    log::warn("Non-required Vulkan extension {} is missing.", extension.name);
-                }
+
+                log::warn("Non-required Vulkan extension {} is missing.", extension.name);
             }
             else
             {
@@ -47,7 +45,7 @@ namespace rhi::vk
                 found_extensions.push_back(extension.name.c_str());
             }
         }
-        log::debug("All requested vulkan extensions found.");
+        log::debug("All requested [required] vulkan extensions found.");
 
         return ok(found_extensions);
     }

@@ -4,6 +4,7 @@
 
 #ifndef RHI_INSTANCE_VK_H
 #define RHI_INSTANCE_VK_H
+#include <memory>
 #include <optional>
 #include <vector>
 #include <string>
@@ -12,6 +13,8 @@
 #include "common/error.h"
 #include "vk/vulkan.h"
 #include "common/window_data.h"
+#include "vk/core/physical_device_handler.h"
+#include "vk/core/debug_messenger.h"
 
 namespace rhi::vk
 {
@@ -82,23 +85,48 @@ namespace rhi::vk
         };
 
     public:
-        instance(const instance&) noexcept = default;
-        instance& operator=(const instance&) noexcept = default;
-        instance(instance&&) = delete;
-        instance& operator=(instance&) = delete;
+        instance(const instance& other) noexcept = delete;
+        instance& operator=(const instance&) noexcept = delete;
+        instance(instance&&) = default;
+        instance& operator=(instance&&) noexcept = default;
 
-        expected<VkSurfaceKHR, surface_create_error> create_surface(const window_data&) noexcept;
+        // instance(instance&& other) noexcept
+        // {
+        //     _detail = std::move(other._detail);
+        //     _debug_messenger = std::move(other._debug_messenger);
+        //     _suitable_devices = std::move(other._suitable_devices);
+        // }
+        // instance& operator=(instance&& other) noexcept
+        // {
+        //     _detail = std::move(other._detail);
+        //     _debug_messenger = std::move(other._debug_messenger);
+        //     _suitable_devices = std::move(other._suitable_devices);
+        //     return *this;
+        // }
 
+        expected<VkSurfaceKHR, surface_create_error> create_surface(const window_data&) const noexcept;
+
+        void destroy() noexcept;
 
     private:
         [[nodiscard]] explicit instance() = default;
+
+    private:
 
         struct
         {
             VkInstance instance { VK_NULL_HANDLE };
             VkSurfaceKHR surface { VK_NULL_HANDLE };
         } _detail {};
+
+        std::vector<class physical_device> _suitable_devices {};
+        std::unique_ptr<debug_messenger> _debug_messenger { nullptr };
     };
+
+    static_assert(std::is_move_assignable_v<instance> && "Instance not move assignable");
+    static_assert(std::is_move_constructible_v<instance> && "Instance not move constructible");
+    static_assert(std::is_copy_assignable_v<instance> == false && "Instance not copy assignable");
+    static_assert(std::is_copy_constructible_v<instance> == false && "Instance not copy constructible");
 } // namespace rhi::vk
 
 #endif //RHI_INSTANCE_VK_H
