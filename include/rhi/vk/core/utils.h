@@ -18,6 +18,8 @@ namespace rhi::vk
     std::string format_physical_device_properties(const VkPhysicalDeviceProperties&, const std::string& = "") noexcept;
 
     const char* format_physical_device_type(VkPhysicalDeviceType) noexcept;
+
+    [[nodiscard]] std::string vulkan_result_to_string(VkResult) noexcept;
 } // namespace rhi::vk
 
 #endif //RHI_UTILS_H

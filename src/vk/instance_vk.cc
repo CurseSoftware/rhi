@@ -5,6 +5,7 @@
 
 #include "core/debug_messenger.h"
 #include "core/log.h"
+#include "vk/device_vk.h"
 #include "vk/core/extension_handler.h"
 #include "vk/core/physical_device_handler.h"
 #include "vk/core/utils.h"
@@ -152,6 +153,7 @@ namespace rhi::vk
         physical_device_handler pd_handler { inst._detail.instance, inst._detail.surface };
         if (!_info.headless)
         {
+            inst._device_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
             pd_handler.request_extension(VK_KHR_SURFACE_EXTENSION_NAME, true);
         }
         inst._suitable_devices = pd_handler.get_suitable_devices();
@@ -163,6 +165,25 @@ namespace rhi::vk
 
         // return ok<instance>(std::move(inst));
         return ok(inst);
+    }
+
+    expected<class device, std::string> instance::create_device() noexcept
+    {
+        auto pd = _suitable_devices[0];
+
+        auto device_exp = device::builder(pd)
+            .surface(_detail.surface)
+            .request_extensions(_device_extensions)
+            .build();
+
+        if (!device_exp.has_value())
+        {
+            return unexpected(device_exp.unwrap_error());
+        }
+
+        _managed_devices.push_back(device_exp.unwrap());
+
+        return device_exp;
     }
 
 
@@ -207,6 +228,11 @@ namespace rhi::vk
         log::debug("Destroying instance...");
         _debug_messenger->destroy();
         _debug_messenger.reset();
+
+        for (auto& device : _managed_devices)
+        {
+            device.destroy();
+        }
 
         _suitable_devices.clear();
         if (_detail.surface != VK_NULL_HANDLE)

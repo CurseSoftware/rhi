@@ -35,6 +35,7 @@ add_library(${PROJECT_NAME}
     "${ASSEMBLY_HEADERS}"
 )
 
+
 if (BACKEND_USE_VULKAN)
     target_compile_definitions("${PROJECT_NAME}" PRIVATE BACKEND_USE_VULKAN)
     find_package(Vulkan REQUIRED)

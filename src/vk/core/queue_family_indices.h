@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "vk/vulkan.h"
 
@@ -29,6 +30,8 @@ namespace rhi::vk
         [[nodiscard]] uint32_t get_present() const noexcept { return _present_family_index.value(); }
 
         [[nodiscard]] std::string get_formatted() const noexcept;
+
+        [[nodiscard]] std::vector<VkDeviceQueueCreateInfo> get_create_infos() const noexcept;
 
     private:
         std::optional<uint32_t> _graphics_family_index { std::nullopt };

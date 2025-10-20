@@ -31,11 +31,14 @@ namespace rhi::vk
         [[nodiscard]] const std::vector<VkExtensionProperties>& get_device_extensions() const noexcept { return _extensions; };
         [[nodiscard]] VkSampleCountFlags max_sample_count() const noexcept { return _max_sample_count; }
         [[nodiscard]] float max_sampler_anisotropy() const noexcept { return _max_sampler_anisotropy; }
+        [[nodiscard]] VkPhysicalDeviceFeatures get_features() const noexcept { return _features; }
 
         [[nodiscard]] bool is_extension_supported(const char*) const noexcept;
         [[nodiscard]] expected<swapchain_support, std::string> get_swapchain_support(const VkSurfaceKHR) noexcept;
 
         [[nodiscard]] std::string_view name() const noexcept { return _properties.deviceName; }
+
+        [[nodiscard]] VkPhysicalDevice get() const noexcept { return _handle; }
 
     private:
         void _get_extensions() noexcept;

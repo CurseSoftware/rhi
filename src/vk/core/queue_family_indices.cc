@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <ranges>
+#include <set>
 
 #include "core/format.h"
 
@@ -58,5 +59,38 @@ namespace rhi::vk
 
         return format_str("Graphics Index: {}. Present Index: {}", graphics_string, present_string);
     }
+
+    std::vector<VkDeviceQueueCreateInfo> queue_family_indices::get_create_infos() const noexcept
+    {
+        constexpr float priority = 1.0f;
+        std::vector<VkDeviceQueueCreateInfo> create_infos {};
+        std::set<uint32_t> unique_indices {};
+
+        if (_graphics_family_index.has_value())
+        {
+            unique_indices.insert(_graphics_family_index.value());
+        }
+
+        if (_present_family_index.has_value())
+        {
+            unique_indices.insert(_present_family_index.value());
+        }
+
+        for (const auto family_index : unique_indices)
+        {
+            VkDeviceQueueCreateInfo create_info {
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .pNext = nullptr,
+                .queueFamilyIndex = family_index,
+                .queueCount = 1,
+                .pQueuePriorities = &priority,
+            };
+
+            create_infos.push_back(create_info);
+        }
+
+        return create_infos;
+    }
+
 
 }

@@ -15,6 +15,7 @@
 #include "common/window_data.h"
 #include "vk/core/physical_device_handler.h"
 #include "vk/core/debug_messenger.h"
+#include "vk/device_vk.h"
 
 namespace rhi::vk
 {
@@ -25,6 +26,12 @@ namespace rhi::vk
         INVALID_WINDOW_DATA_NOT_METAL,
         INVALID_WINDOW_DATA_NOT_WAYLAND,
         CREATE_SURFACE_FAILED
+    };
+
+    enum class device_create_error
+    {
+        INVALID_PHYSICAL_DEVICE,
+        CREATION_FAILED
     };
 
     class instance
@@ -90,22 +97,15 @@ namespace rhi::vk
         instance(instance&&) = default;
         instance& operator=(instance&&) noexcept = default;
 
-        // instance(instance&& other) noexcept
-        // {
-        //     _detail = std::move(other._detail);
-        //     _debug_messenger = std::move(other._debug_messenger);
-        //     _suitable_devices = std::move(other._suitable_devices);
-        // }
-        // instance& operator=(instance&& other) noexcept
-        // {
-        //     _detail = std::move(other._detail);
-        //     _debug_messenger = std::move(other._debug_messenger);
-        //     _suitable_devices = std::move(other._suitable_devices);
-        //     return *this;
-        // }
+        [[nodiscard]] expected<VkSurfaceKHR, surface_create_error> create_surface(const window_data&) const noexcept;
 
-        expected<VkSurfaceKHR, surface_create_error> create_surface(const window_data&) const noexcept;
+        /// @brief Create a device from the instance. This overload chooses the first suitable physical device
+        [[nodiscard]] expected<class device, std::string> create_device() noexcept;
 
+        /// @brief Create a device from the instance. This overload chooses the physical device with the specified id (Assuming it is valid)
+        [[nodiscard]] expected<class device, std::string> create_device(uint32_t physical_device_id) noexcept;
+
+        /// @brief Destroy the instance and the objects it handles
         void destroy() noexcept;
 
     private:
@@ -121,6 +121,9 @@ namespace rhi::vk
 
         std::vector<class physical_device> _suitable_devices {};
         std::unique_ptr<debug_messenger> _debug_messenger { nullptr };
+        std::vector<const char*> _device_extensions {};
+        std::vector<const char*> _validation_layers {};
+        std::vector<device> _managed_devices {};
     };
 
     static_assert(std::is_move_assignable_v<instance> && "Instance not move assignable");

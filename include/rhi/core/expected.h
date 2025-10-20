@@ -272,18 +272,18 @@ namespace rhi
             std::terminate();
         }
 
-        // constexpr auto
-        // unwrap() const & noexcept -> T const&&
-        // requires (std::is_move_constructible_v<T> && std::is_move_assignable_v<T> && !std::is_copy_constructible_v<T>)
-        // {
-        //     // static_assert(std::is_copy_constructible_v<T>, "T must be copyable");
-        //     if (_is_ok)
-        //     {
-        //         return std::move(std::get<T>(_value));
-        //     }
-        //
-        //     std::terminate();
-        // }
+        constexpr auto
+        unwrap() const & noexcept -> T const&&
+        requires (std::is_move_constructible_v<T> && std::is_move_assignable_v<T> && !std::is_copy_constructible_v<T>)
+        {
+            // static_assert(std::is_copy_constructible_v<T>, "T must be copyable");
+            if (_is_ok)
+            {
+                return std::move(std::get<T>(_value));
+            }
+
+            std::terminate();
+        }
 
         constexpr auto
         unwrap() & noexcept -> T &&
