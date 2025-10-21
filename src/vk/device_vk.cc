@@ -31,7 +31,7 @@ namespace rhi::vk
             .pEnabledFeatures = std::addressof(features)
         };
 
-        const VkResult create_result = vkCreateDevice(_info.physical_device.get(), &create_info, nullptr, &device._device);
+        const VkResult create_result = vkCreateDevice(_info.physical_device.get(), &create_info, nullptr, &device._handle);
 
         if (!vk_check(create_result))
         {
@@ -85,7 +85,7 @@ namespace rhi::vk
 
     void device::destroy() noexcept
     {
-        vkDestroyDevice(_device, nullptr);
+        vkDestroyDevice(_handle, nullptr);
     }
 
 } // namespace rhi::vk

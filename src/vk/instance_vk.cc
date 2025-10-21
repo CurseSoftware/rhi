@@ -112,7 +112,7 @@ namespace rhi::vk
         const VkResult create_result = vkCreateInstance(
             &instance_info,
             nullptr,
-            &inst._detail.instance
+            &inst._handle
         );
 
         if (_info.window.has_value())
@@ -123,7 +123,7 @@ namespace rhi::vk
                 return unexpected(error(error::code::INSTANCE_FAIL, "Failed to create instance -> [instance::create_surface]"));
             }
 
-            inst._detail.surface = surface_exp.unwrap();
+            inst._surface = surface_exp.unwrap();
             log::debug("Surface created.");
         }
 
@@ -137,7 +137,7 @@ namespace rhi::vk
         if (_info.enable_debug)
         {
             log::debug("Creating debug messenger...");
-            auto messenger_exp = debug_messenger::create(inst._detail.instance, *debug_create_info.get());
+            auto messenger_exp = debug_messenger::create(inst._handle, *debug_create_info.get());
             if (!messenger_exp.has_value())
             {
                 log::error("Failed to create debug messenger: [{}]", messenger_exp.unwrap_error());
@@ -150,7 +150,7 @@ namespace rhi::vk
 
         // Handle the physical devices
         log::debug("Retrieving suitable physical devices...");
-        physical_device_handler pd_handler { inst._detail.instance, inst._detail.surface };
+        physical_device_handler pd_handler { inst._handle, inst._surface };
         if (!_info.headless)
         {
             inst._device_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -169,10 +169,51 @@ namespace rhi::vk
 
     expected<class device, std::string> instance::create_device() noexcept
     {
-        auto pd = _suitable_devices[0];
+        const auto pd = _suitable_devices[0];
 
         auto device_exp = device::builder(pd)
-            .surface(_detail.surface)
+            .surface(_surface)
+            .request_extensions(_device_extensions)
+            .build();
+
+        if (!device_exp.has_value())
+        {
+            return unexpected(device_exp.unwrap_error());
+        }
+
+        _managed_devices.push_back(device_exp.unwrap());
+
+        return device_exp;
+    }
+
+    auto instance::create_device(uint32_t physical_device_id) noexcept -> expected<class device, std::string>
+    {
+        const auto device_attempt = [this, physical_device_id]() -> std::tuple<physical_device, bool>
+        {
+            constexpr bool device_found = true;
+            constexpr bool device_not_found = false;
+
+            for (auto& device : this->_suitable_devices)
+            {
+                if (device.id() == physical_device_id)
+                {
+                    return std::make_tuple(device, device_found);
+                }
+            }
+
+            return std::make_tuple(_suitable_devices[0], device_not_found);
+        }();
+
+        if (!std::get<bool>(device_attempt))
+        {
+            std::string message = format_str("Device with id {} was not found in list of suitable devices.", physical_device_id);
+            return unexpected(message);
+        }
+
+        const auto pd = std::get<physical_device>(device_attempt);
+
+        auto device_exp = device::builder(pd)
+            .surface(_surface)
             .request_extensions(_device_extensions)
             .build();
 
@@ -207,7 +248,7 @@ namespace rhi::vk
         };
 
         const VkResult result = vkCreateWin32SurfaceKHR(
-            _detail.instance,
+            _handle,
             &win32_surface_create_info,
             nullptr,
             &surface
@@ -235,12 +276,12 @@ namespace rhi::vk
         }
 
         _suitable_devices.clear();
-        if (_detail.surface != VK_NULL_HANDLE)
+        if (_surface != VK_NULL_HANDLE)
         {
-            vkDestroySurfaceKHR(_detail.instance, _detail.surface, nullptr);
+            vkDestroySurfaceKHR(_handle, _surface, nullptr);
         }
 
-        vkDestroyInstance(_detail.instance, nullptr);
+        vkDestroyInstance(_handle, nullptr);
         log::debug("Instance destroyed");
     }
 

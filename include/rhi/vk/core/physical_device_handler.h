@@ -21,7 +21,7 @@ namespace rhi::vk
         std::vector<VkPresentModeKHR> present_modes {};
     };
 
-    class physical_device
+    class physical_device final : public vulkan_object<VkPhysicalDevice>
     {
     public:
         [[nodiscard]] static physical_device create(VkPhysicalDevice, VkPhysicalDeviceProperties, VkPhysicalDeviceFeatures) noexcept;
@@ -38,14 +38,13 @@ namespace rhi::vk
 
         [[nodiscard]] std::string_view name() const noexcept { return _properties.deviceName; }
 
-        [[nodiscard]] VkPhysicalDevice get() const noexcept { return _handle; }
+        [[nodiscard]] auto id() const noexcept -> uint32_t { return _properties.deviceID; }
 
     private:
         void _get_extensions() noexcept;
         [[nodiscard]] VkSampleCountFlags _get_max_sample_count() const noexcept;
 
     private:
-        VkPhysicalDevice _handle { VK_NULL_HANDLE };
         VkPhysicalDeviceProperties _properties {};
         VkPhysicalDeviceFeatures _features {};
         VkSampleCountFlags _max_sample_count {};

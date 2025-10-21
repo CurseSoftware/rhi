@@ -34,7 +34,7 @@ namespace rhi::vk
         CREATION_FAILED
     };
 
-    class instance
+    class instance final : public vulkan_object<VkInstance>
     {
     public:
         class builder
@@ -97,27 +97,24 @@ namespace rhi::vk
         instance(instance&&) = default;
         instance& operator=(instance&&) noexcept = default;
 
-        [[nodiscard]] expected<VkSurfaceKHR, surface_create_error> create_surface(const window_data&) const noexcept;
+        [[nodiscard]] auto create_surface(const window_data&) const noexcept -> expected<VkSurfaceKHR, surface_create_error>;
 
         /// @brief Create a device from the instance. This overload chooses the first suitable physical device
-        [[nodiscard]] expected<class device, std::string> create_device() noexcept;
+        [[nodiscard]] auto create_device() noexcept -> expected<class device, std::string>;
 
         /// @brief Create a device from the instance. This overload chooses the physical device with the specified id (Assuming it is valid)
-        [[nodiscard]] expected<class device, std::string> create_device(uint32_t physical_device_id) noexcept;
+        [[nodiscard]] auto create_device(uint32_t physical_device_id) noexcept -> expected<class device, std::string>;
 
         /// @brief Destroy the instance and the objects it handles
-        void destroy() noexcept;
+        auto destroy() noexcept -> void override;
 
     private:
         [[nodiscard]] explicit instance() = default;
 
     private:
 
-        struct
-        {
-            VkInstance instance { VK_NULL_HANDLE };
-            VkSurfaceKHR surface { VK_NULL_HANDLE };
-        } _detail {};
+        // VkInstance instance { VK_NULL_HANDLE };
+        VkSurfaceKHR _surface { VK_NULL_HANDLE };
 
         std::vector<class physical_device> _suitable_devices {};
         std::unique_ptr<debug_messenger> _debug_messenger { nullptr };

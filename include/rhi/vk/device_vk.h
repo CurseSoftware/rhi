@@ -15,7 +15,7 @@
 
 namespace rhi::vk
 {
-    class device
+    class device : public vulkan_object<VkDevice>
     {
     public:
         class builder
@@ -41,10 +41,10 @@ namespace rhi::vk
             } _info {};
         };
 
-        void destroy() noexcept;
+        auto destroy() noexcept -> void override;
 
     private:
-        VkDevice _device { VK_NULL_HANDLE };
+        // VkDevice _device { VK_NULL_HANDLE };
     };
 } // namespace rhi::vk
 
